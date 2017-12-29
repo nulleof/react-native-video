@@ -47,6 +47,7 @@ import com.google.android.exoplayer2.trackselection.TrackSelectionArray;
 import com.google.android.exoplayer2.upstream.DataSource;
 import com.google.android.exoplayer2.upstream.DefaultBandwidthMeter;
 import com.google.android.exoplayer2.util.Util;
+import com.google.android.exoplayer2.upstream.HttpDataSource.InvalidResponseCodeException;
 
 import java.net.CookieHandler;
 import java.net.CookieManager;
@@ -197,6 +198,30 @@ class ReactExoplayerView extends FrameLayout implements
         stopPlayback();
     }
 
+    @Override
+    public void onSeekProcessed() {
+
+    }
+
+    @Override
+    public void onPositionDiscontinuity(int num) {
+        if (playerNeedsSource) {
+            // This will only occur if the user has performed a seek whilst in the error state. Update the
+            // resume position so that if the user then retries, playback will resume from the position to
+            // which they seeked.
+            updateResumePosition(num);
+        }
+    }
+
+    @Override
+    public void onRepeatModeChanged(int id) {
+
+    }
+
+    @Override
+    public void onShuffleModeEnabledChanged(boolean val) {
+
+    }
 
     // Internal methods
 
@@ -340,6 +365,12 @@ class ReactExoplayerView extends FrameLayout implements
                 : C.TIME_UNSET;
     }
 
+    private void updateResumePosition(int num) {
+        resumeWindow = player.getCurrentWindowIndex();
+        resumePosition = player.isCurrentWindowSeekable() ? num
+                : C.TIME_UNSET;
+    }
+
     private void clearResumePosition() {
         resumeWindow = C.INDEX_UNSET;
         resumePosition = C.TIME_UNSET;
@@ -455,16 +486,6 @@ class ReactExoplayerView extends FrameLayout implements
     }
 
     @Override
-    public void onPositionDiscontinuity() {
-        if (playerNeedsSource) {
-            // This will only occur if the user has performed a seek whilst in the error state. Update the
-            // resume position so that if the user then retries, playback will resume from the position to
-            // which they seeked.
-            updateResumePosition();
-        }
-    }
-
-    @Override
     public void onTimelineChanged(Timeline timeline, Object manifest) {
         // Do nothing.
     }
@@ -511,6 +532,8 @@ class ReactExoplayerView extends FrameLayout implements
         if (isBehindLiveWindow(e)) {
             clearResumePosition();
             initializePlayer();
+        } else if (isResponceException(e)) {
+            reloadSource();
         } else {
             updateResumePosition();
         }
@@ -521,8 +544,24 @@ class ReactExoplayerView extends FrameLayout implements
             return false;
         }
         Throwable cause = e.getSourceException();
+
         while (cause != null) {
             if (cause instanceof BehindLiveWindowException) {
+                return true;
+            }
+            cause = cause.getCause();
+        }
+        return false;
+    }
+
+    private static boolean isResponceException(ExoPlaybackException e) {
+        if (e.type != ExoPlaybackException.TYPE_SOURCE) {
+            return false;
+        }
+        Throwable cause = e.getSourceException();
+
+        while (cause != null) {
+            if (cause instanceof InvalidResponseCodeException) {
                 return true;
             }
             cause = cause.getCause();

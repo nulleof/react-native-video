@@ -212,11 +212,6 @@ public final class ExoPlayerView extends FrameLayout {
         }
 
         @Override
-        public void onPositionDiscontinuity() {
-            // Do nothing.
-        }
-
-        @Override
         public void onTimelineChanged(Timeline timeline, Object manifest) {
             // Do nothing.
         }
@@ -234,6 +229,26 @@ public final class ExoPlayerView extends FrameLayout {
         @Override
         public void onMetadata(Metadata metadata) {
             Log.d("onMetadata", "onMetadata");
+        }
+
+        @Override
+        public void onSeekProcessed() {
+            // Do nothing.
+        }
+
+        @Override
+        public void onPositionDiscontinuity(int num) {
+            // Do nothing.
+        }
+
+        @Override
+        public void onShuffleModeEnabledChanged(boolean val) {
+            // Do nothing.
+        }
+
+        @Override
+        public void onRepeatModeChanged(int id) {
+            // Do nothing.
         }
     }
 
