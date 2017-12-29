@@ -90,6 +90,8 @@ class ReactExoplayerView extends FrameLayout implements
     private boolean isBuffering;
     private float rate = 1f;
 
+    private boolean alreadyPlayed = false;
+
     // Props from React
     private Uri srcUri;
     private String extension;
@@ -438,6 +440,10 @@ class ReactExoplayerView extends FrameLayout implements
             case ExoPlayer.STATE_BUFFERING:
                 text += "buffering";
                 onBuffering(true);
+                if (alreadyPlayed) {
+                    reloadSource();
+                    alreadyPlayed = false;
+                }
                 break;
             case ExoPlayer.STATE_READY:
                 text += "ready";
@@ -445,6 +451,7 @@ class ReactExoplayerView extends FrameLayout implements
                 onBuffering(false);
                 startProgressHandler();
                 videoLoaded();
+                alreadyPlayed = true;
                 break;
             case ExoPlayer.STATE_ENDED:
                 text += "ended";
